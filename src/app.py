@@ -1,5 +1,6 @@
 import os
 import site
+import traceback
 
 from flask import Flask, jsonify, request, session, Response
 # from flask_cors import CORS
@@ -30,6 +31,15 @@ def test_router():
     comn_logger.info(msg)
     return jsonify(msg)
 
+@app.route('/traceback_test', methods=['GET'])
+def traceback_test_router():
+    msg = 'ok'
+    try:
+        int('k')
+    except:
+        msg = traceback.format_exc()
+        comn_logger.error(msg)
+    return jsonify(msg)
 
 @app.route('/api/model_ex1', methods=['POST'])
 def run_model_ex1():
