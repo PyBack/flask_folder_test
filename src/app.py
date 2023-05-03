@@ -3,7 +3,8 @@ import site
 import traceback
 
 from flask import Flask, jsonify, request, session, Response
-# from flask_cors import CORS
+from flask_cors import CORS
+from flask_restx import Api, Resource, reqparse
 # from flask_bcrypt import Bcrypt
 # from flask_sqlalchemy import SQLAlchemy
 
@@ -17,19 +18,38 @@ site.addsitedir(pjt_home_path)
 from utils.comn_logger import comn_logger
 from models import model_ex1
 
+FLASK_RUN_PORT = 55000
+FLASK_DEBUG = True
+
 # instantiate the app
 app = Flask(__name__)
+api = Api(app, version='1.0',
+          title='Flask API',
+          description='A simple Flask API',
+          )
+
+# enable CORS
+CORS(app, resources={r'/*': {'origins': '*'}})
 
 # 환경변수 로딩
 # os.environ
 load_dotenv()
 
 
+parser = reqparse.RequestParser()
+parser.add_argument('name', type=str, help='Name')
+
 @app.route('/', methods=['GET'])
 def test_router():
     msg = 'This is Docker Test development Server!'
     comn_logger.info(msg)
     return jsonify(msg)
+
+
+@app.route('/health_check', methods=['GET'])
+def health_check():
+    return jsonify('good')
+
 
 @app.route('/traceback_test', methods=['GET'])
 def traceback_test_router():
@@ -40,6 +60,7 @@ def traceback_test_router():
         msg = traceback.format_exc()
         comn_logger.error(msg)
     return jsonify(msg)
+
 
 @app.route('/api/model_ex1', methods=['POST'])
 def run_model_ex1():
@@ -53,5 +74,20 @@ def run_model_ex1():
     return jsonify(result_json)
 
 
+@api.route('/hello')
+class Hello(Resource):
+    def get(self):
+        return {'message': 'hello world'}
+
+
+@api.route('/echo')
+class Hello(Resource):
+    def get(self):
+        args = parser.parse_args()
+        msg = args['name']
+        return 'message > ' +  'echo: %s' % msg
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('FLASK_RUN_PORT'), debug=os.environ.get('FLASK_DEBUG'))
+    # app.run(host='0.0.0.0', port=os.environ.get('FLASK_RUN_PORT'), debug=os.environ.get('FLASK_DEBUG'))
+    app.run(host='0.0.0.0', port=FLASK_RUN_PORT, debug=FLASK_DEBUG)
