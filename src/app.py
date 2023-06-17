@@ -2,6 +2,8 @@ import os
 import site
 import traceback
 
+from logging.config import dictConfig
+
 from flask import Flask, jsonify, request, session, Response
 from flask_cors import CORS
 from flask_restx import Api, Resource, reqparse
@@ -21,11 +23,28 @@ from models import model_ex1
 FLASK_RUN_PORT = 55000
 FLASK_DEBUG = True
 
+# Flask root logger config
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '%(asctime)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://sys.stdout',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
+
 # instantiate the app
 app = Flask(__name__)
-api = Api(app, version='1.0',
+api = Api(app, version='0.0',
           title='Flask API',
-          description='A simple Flask API',
+          description='Flask API Structure Test',
           )
 
 # enable CORS
@@ -48,7 +67,7 @@ def test_router():
 
 @app.route('/health_check', methods=['GET'])
 def health_check():
-    return jsonify('good')
+    return jsonify({'flaskapi': 'good'})
 
 
 @app.route('/traceback_test', methods=['GET'])
@@ -58,7 +77,7 @@ def traceback_test_router():
         int('k')
     except:
         msg = traceback.format_exc()
-        comn_logger.error(msg)
+        app.logger.error(msg)
     return jsonify(msg)
 
 
@@ -70,13 +89,14 @@ def run_model_ex1():
     result = model_ex1.model_simple(x, y)
     result_json = {'result': result}
     msg = str(result_json)
-    comn_logger.info(msg)
+    app.logger.info(msg)
     return jsonify(result_json)
 
 
 @api.route('/hello')
 class Hello(Resource):
     def get(self):
+        app.logger.info('hello world')
         return {'message': 'hello world'}
 
 
@@ -85,7 +105,8 @@ class Hello(Resource):
     def get(self):
         args = parser.parse_args()
         msg = args['name']
-        return 'message > ' +  'echo: %s' % msg
+        app.logger.info(msg)
+        return 'message > ' + 'echo: %s' % msg
 
 
 if __name__ == '__main__':
