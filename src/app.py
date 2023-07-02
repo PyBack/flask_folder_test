@@ -4,9 +4,10 @@ import traceback
 
 from logging.config import dictConfig
 
+from flask import Blueprint
 from flask import Flask, jsonify, request, session, Response
 from flask_cors import CORS
-from flask_restx import Api, Resource, reqparse
+from flask_restx import Api, Resource, Namespace, reqparse
 # from flask_bcrypt import Bcrypt
 # from flask_sqlalchemy import SQLAlchemy
 
@@ -42,10 +43,13 @@ dictConfig({
 
 # instantiate the app
 app = Flask(__name__)
-api = Api(app, version='0.0',
+blueprint = Blueprint('api_2', __name__, url_prefix='/api/v2')
+api = Api(blueprint, version='0.2',
           title='Flask API',
           description='Flask API Structure Test',
           )
+
+app.register_blueprint(blueprint)
 
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
@@ -55,18 +59,18 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 load_dotenv()
 
 
-parser = reqparse.RequestParser()
-parser.add_argument('name', type=str, help='Name')
-
 @app.route('/', methods=['GET'])
 def test_router():
     msg = 'This is Docker Test development Server!'
     comn_logger.info(msg)
+    print(msg)
     return jsonify(msg)
 
 
 @app.route('/health_check', methods=['GET'])
 def health_check():
+    comn_logger.info('flaskapi: good')
+    print('flaskapi: good')
     return jsonify({'flaskapi': 'good'})
 
 
@@ -101,12 +105,21 @@ class Hello(Resource):
 
 
 @api.route('/echo')
-class Hello(Resource):
+class Echo(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('name', type=str, help='Name')
+
+    @api.expect(parser)
     def get(self):
-        args = parser.parse_args()
+        args = self.parser.parse_args()
         msg = args['name']
         app.logger.info(msg)
         return 'message > ' + 'echo: %s' % msg
+
+# # ex_ns_v2 = Namespace('example', 'example service v2')
+# api.add_namespace(ex_ns_v2)
+# ex_ns_v2.add_resource(Echo)
+# ex_ns_v2.add_resource(Hello)
 
 
 if __name__ == '__main__':

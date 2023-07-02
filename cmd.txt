@@ -1,0 +1,2 @@
+docker build -t flask_folder_test ./
+docker container run -it --name flask_folder_test -d -p 5000:55000 flask_folder_test:latest
